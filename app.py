@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 import boto3
+import uuid
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -7,6 +8,11 @@ db = SQLAlchemy()
 
 app.config["SQLALCHEMY_DATABASE_URI"]="sqlite:///database.db"
 db.init_app(app)
+
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -21,15 +27,17 @@ with app.app_context():
 def index():
 
     if request.method == 'POST':
-        uploaded_file = request.files['new-file']
-        if uploaded_file == "":
-            return 'please select a file'
+        uploaded_file = request.files["new-file"]
+        if not allowed_file(uploaded_file.filename):
+            return "FILE NOT ALLOWED!"
+
+        new_filename = uuid.uuid4().hex + '.' + uploaded_file.filename.rsplit('.', 1)[1].lower()
 
         bucket_name = "4myachubucket"
         s3 = boto3.resource('s3')
-        s3.Bucket(bucket_name).upload_fileobj(uploaded_file, bucket_name)
+        s3.Bucket(bucket_name).upload_fileobj(uploaded_file,new_filename)
 
-        return redirect(url_for('index.html'))
+        return redirect(url_for('index'))
 
     # Get the files from de db   
     files = File.query.all()
