@@ -13,7 +13,10 @@
     </form>
 
     {% for file in files %}
-    <div><a href="https://{{ file.bucket }}.s3.{{ file.region }}.amazonaws.com/{{ file.filename }}">{{ file.filename }}</a></div>
+    <div><video width="400px" height="300" controls src="{{file.file_url}}"></video>
+        <h2>{{file.file_url}}</h2>
+    </div>
+    
     {% endfor %}
 </body>
 </html>

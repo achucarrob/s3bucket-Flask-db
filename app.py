@@ -9,16 +9,18 @@ db = SQLAlchemy()
 app.config["SQLALCHEMY_DATABASE_URI"]="sqlite:///database.db"
 db.init_app(app)
 
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png'}
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'mp4'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+
     filename = db.Column(db.String(100))
-    bucket = db.Column(db.String(100))
-    region = db.Column(db.String(100))
+    file_url = db.Column(db.String(200))
+    # bucket = db.Column(db.String(100))
+    # region = db.Column(db.String(100))
 
 with app.app_context():
     db.create_all()
@@ -36,7 +38,11 @@ def index():
         bucket_name = "4myachubucket"
         s3 = boto3.resource('s3')
         s3.Bucket(bucket_name).upload_fileobj(uploaded_file,new_filename)
-
+        file_url = 'https://4myachubucket.s3.us-east-2.amazonaws.com/{}'.format(new_filename)
+        new_file = File(filename = new_filename, file_url = file_url)
+        # query = db.insert(File).values(filename=new_filename, file_url=achufile)
+        db.session.add(new_file)
+        db.session.commit()
         return redirect(url_for('index'))
 
     # Get the files from de db   
